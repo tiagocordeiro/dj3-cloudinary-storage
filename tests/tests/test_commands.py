@@ -150,13 +150,13 @@ class CollectStaticCommandTests(SimpleTestCase):
     @mock.patch.object(StaticCloudinaryStorage, 'save')
     def test_command_saves_static_files(self, save_mock):
         output = execute_command('collectstatic', '--noinput')
-        self.assertEqual(save_mock.call_count, 2)
+        self.assertEqual(save_mock.call_count, 3)
         if version.get_complete_version() >= (2, 0):
-            self.assertIn('2 static files copied.', output)
+            self.assertIn('3 static files copied.', output)
         else:
             for file in STATIC_FILES:
                 self.assertIn(file, output)
-            self.assertIn('2 static files copied.', output)
+            self.assertIn('3 static files copied.', output)
 
 
 @override_settings(STATICFILES_STORAGE='cloudinary_storage.storage.StaticHashedCloudinaryStorage')
@@ -165,22 +165,22 @@ class CollectStaticCommandWithHashedStorageTests(SimpleTestCase):
     @mock.patch.object(StaticHashedCloudinaryStorage, 'save_manifest')
     def test_command_saves_hashed_static_files(self, save_manifest_mock, save_mock):
         output = execute_command('collectstatic', '--noinput')
-        self.assertEqual(save_mock.call_count, 1 * get_save_calls_counter_in_postprocess_of_adjustable_file() + 1)
+        self.assertEqual(save_mock.call_count, 1 * get_save_calls_counter_in_postprocess_of_adjustable_file() + 2)
         if version.get_complete_version() <= (2, 0):
             for file in STATIC_FILES:
                 self.assertIn(file, output)
-        post_process_counter = 1 + 1 * get_postprocess_counter_of_adjustable_file()
+        post_process_counter = 2 + 1 * get_postprocess_counter_of_adjustable_file()
         self.assertIn('0 static files copied, {} post-processed.'.format(post_process_counter), output)
 
     @mock.patch.object(StaticHashedCloudinaryStorage, 'save_manifest')
     def test_command_saves_unhashed_static_files_with_upload_unhashed_files_arg(self, save_manifest_mock, save_mock):
         output = execute_command('collectstatic', '--noinput', '--upload-unhashed-files')
-        self.assertEqual(save_mock.call_count, 2 + 1 + 1 * get_save_calls_counter_in_postprocess_of_adjustable_file())
+        self.assertEqual(save_mock.call_count, 2 + 1 + 2 * get_save_calls_counter_in_postprocess_of_adjustable_file())
         if version.get_complete_version() <= (2, 0):
             for file in STATIC_FILES:
                 self.assertIn(file, output)
-        post_process_counter = 1 + 1 * get_postprocess_counter_of_adjustable_file()
-        self.assertIn('2 static files copied, {} post-processed.'.format(post_process_counter), output)
+        post_process_counter = 2 + 1 * get_postprocess_counter_of_adjustable_file()
+        self.assertIn('3 static files copied, {} post-processed.'.format(post_process_counter), output)
 
 
 class CollectStaticCommandWithHashedStorageWithoutMockTests(SimpleTestCase):
@@ -230,7 +230,9 @@ class DeleteRedundantStaticCommandTests(StaticHashedStorageTestsMixin, SimpleTes
             'static/tests/css/style.css',
             'static/tests/css/style.{}.css'.format(self.style_hash),
             'static/tests/images/dummy-static-image',  # removed jpg extension
-            'static/tests/images/dummy-static-image.{}'.format(self.image_hash)  # removed jpg extension
+            'static/tests/images/dummy-static-image.{}'.format(self.image_hash),  # removed jpg extension
+            'static/tests/images/dummy-static-svg.svg',
+            'static/tests/images/dummy-static-svg.{}.svg'.format(self.svg_hash)
         }
         self.assertEqual(command.get_needful_files(), expected_response)
 
@@ -239,7 +241,8 @@ class DeleteRedundantStaticCommandTests(StaticHashedStorageTestsMixin, SimpleTes
         command.keep_unhashed_files = False
         expected_response = {
             'static/tests/css/style.{}.css'.format(self.style_hash),
-            'static/tests/images/dummy-static-image.{}'.format(self.image_hash)  # removed jpg extension
+            'static/tests/images/dummy-static-image.{}'.format(self.image_hash),  # removed jpg extension
+            'static/tests/images/dummy-static-svg.{}.svg'.format(self.svg_hash)
         }
         self.assertEqual(command.get_needful_files(), expected_response)
 

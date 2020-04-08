@@ -168,13 +168,13 @@ class StaticCloudinaryStorageTests(SimpleTestCase):
     def test_url_with_debug_false(self):
         self.assertIn('cloudinary', self.storage.url('name'))
 
-    def test_file_exists_with_the_same_name_as_before_save(self):
-        self.assertTrue(self.storage.exists(self.name))
+    def test_file_dont_exists_with_the_same_name_as_before_save(self):
+        self.assertFalse(self.storage.exists(self.name))
 
     @mock.patch.object(MediaCloudinaryStorage, '_save')
-    def test_file_wont_be_uploaded_with_the_same_content(self, save_mock):
+    def test_file_be_uploaded_with_the_same_content(self, save_mock):
         self.storage.save(self.name, self.file)
-        self.assertFalse(save_mock.called)
+        self.assertTrue(save_mock.called)
 
     @mock.patch.object(MediaCloudinaryStorage, '_save')
     def test_file_will_be_uploaded_with_different_content(self, save_mock):
