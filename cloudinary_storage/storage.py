@@ -11,7 +11,7 @@ from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.contrib.staticfiles.storage import HashedFilesMixin, ManifestFilesMixin
 from django.core.files.base import ContentFile, File
-from django.core.files.storage import Storage, FileSystemStorage
+from django.core.files.storage import FileSystemStorage, Storage
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.deconstruct import deconstructible
 
@@ -65,6 +65,7 @@ class MediaCloudinaryStorage(Storage):
         name = self._normalise_name(name)
         name = self._prepend_prefix(name)
         content = UploadedFile(content, name)
+        content.seek(0)  # fix for svg files
         response = self._upload(name, content)
         return response['public_id']
 
@@ -264,6 +265,7 @@ class ManifestCloudinaryStorage(FileSystemStorage):
     then you are guaranteed the manifest will be used in all production environment,
     including Heroku and AWS Elastic Beanstalk.
     """
+
     def __init__(self, location=None, base_url=None, *args, **kwargs):
         location = app_settings.STATICFILES_MANIFEST_ROOT if location is None else location
         super(ManifestCloudinaryStorage, self).__init__(location, base_url, *args, **kwargs)
