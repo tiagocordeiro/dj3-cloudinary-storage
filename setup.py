@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="dj3-cloudinary-storage",
-    version="0.0.2",
+    version="0.0.3",
     author="Tiago Cordeiro",
     author_email="tiago@mulhergorila.com",
     description=description,
