@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="dj3-cloudinary-storage",
-    version="0.0.4",
+    version="0.0.5",
     author="Tiago Cordeiro",
     author_email="tiago@mulhergorila.com",
     description=description,
@@ -40,7 +40,7 @@ setup(
         "cloudinary_storage.management.commands",
     ],
     include_package_data=True,
-    install_requires=["requests>=2.25.1", "cloudinary>=1.24.0"],
+    install_requires=["requests>=2.25.1", "cloudinary>=1.25.0"],
     extras_require={"video": ["python-magic>=0.4.22"]},
     classifiers=[
         "Framework :: Django",
