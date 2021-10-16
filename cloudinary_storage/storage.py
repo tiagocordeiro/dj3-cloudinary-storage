@@ -312,7 +312,11 @@ class HashCloudinaryMixin(object):
                     )
                 else:
                     raise
-            content = File(content)
+            except TypeError as e:
+                content = open(absolute_path, "w")
+                content = File(content)
+            else:
+                content = File(content)
             opened = True
         try:
             file_hash = self.file_hash(clean_name, content)
