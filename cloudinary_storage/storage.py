@@ -65,8 +65,14 @@ class MediaCloudinaryStorage(Storage):
         name = self._normalise_name(name)
         name = self._prepend_prefix(name)
         content = UploadedFile(content, name)
-        response = self._upload(name, content)
-        return response["public_id"]
+        try:
+            response = self._upload(name, content)
+            return response["public_id"]
+        except cloudinary.exceptions.Error as e:
+            if str(e) == "Empty file":
+                pass
+            else:
+                raise
 
     def delete(self, name):
         response = cloudinary.uploader.destroy(
