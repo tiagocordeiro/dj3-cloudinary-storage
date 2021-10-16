@@ -313,8 +313,8 @@ class HashCloudinaryMixin(object):
                 else:
                     raise
             except TypeError as e:
-                content = open(absolute_path, "w")
-                content = File(content)
+                # Handling empty file at read
+                return ""
             else:
                 content = File(content)
             opened = True
