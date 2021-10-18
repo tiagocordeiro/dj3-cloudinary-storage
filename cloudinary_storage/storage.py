@@ -18,16 +18,12 @@ from django.utils.deconstruct import deconstructible
 from . import app_settings
 from .helpers import get_resources_by_path
 
-RESOURCE_TYPES = {
-    'IMAGE': 'image',
-    'RAW': 'raw',
-    'VIDEO': 'video'
-}
+RESOURCE_TYPES = {"IMAGE": "image", "RAW": "raw", "VIDEO": "video"}
 
 
 @deconstructible
 class MediaCloudinaryStorage(Storage):
-    RESOURCE_TYPE = RESOURCE_TYPES['IMAGE']
+    RESOURCE_TYPE = RESOURCE_TYPES["IMAGE"]
     TAG = app_settings.MEDIA_TAG
 
     def __init__(self, tag=None, resource_type=None):
@@ -43,7 +39,7 @@ class MediaCloudinaryStorage(Storage):
         """
         return self.RESOURCE_TYPE
 
-    def _open(self, name, mode='rb'):
+    def _open(self, name, mode="rb"):
         url = self._get_url(name)
         response = requests.get(url)
         if response.status_code == 404:
@@ -55,26 +51,40 @@ class MediaCloudinaryStorage(Storage):
         return file
 
     def _upload(self, name, content):
-        options = {'use_filename': True, 'resource_type': self._get_resource_type(name), 'tags': self.TAG}
+        options = {
+            "use_filename": True,
+            "resource_type": self._get_resource_type(name),
+            "tags": self.TAG,
+        }
         folder = os.path.dirname(name)
         if folder:
-            options['folder'] = folder
+            options["folder"] = folder
         return cloudinary.uploader.upload(content, **options)
 
     def _save(self, name, content):
         name = self._normalise_name(name)
         name = self._prepend_prefix(name)
         content = UploadedFile(content, name)
-        response = self._upload(name, content)
-        return response['public_id']
+        try:
+            response = self._upload(name, content)
+            return response["public_id"]
+        except cloudinary.exceptions.Error as e:
+            if str(e) == "Empty file":
+                pass
+            else:
+                raise
 
     def delete(self, name):
-        response = cloudinary.uploader.destroy(name, invalidate=True, resource_type=self._get_resource_type(name))
-        return response['result'] == 'ok'
+        response = cloudinary.uploader.destroy(
+            name, invalidate=True, resource_type=self._get_resource_type(name)
+        )
+        return response["result"] == "ok"
 
     def _get_url(self, name):
         name = self._prepend_prefix(name)
-        cloudinary_resource = cloudinary.CloudinaryResource(name, default_resource_type=self._get_resource_type(name))
+        cloudinary_resource = cloudinary.CloudinaryResource(
+            name, default_resource_type=self._get_resource_type(name)
+        )
         return cloudinary_resource.url
 
     def url(self, name):
@@ -92,7 +102,7 @@ class MediaCloudinaryStorage(Storage):
         url = self._get_url(name)
         response = requests.head(url)
         if response.status_code == 200:
-            return int(response.headers['content-length'])
+            return int(response.headers["content-length"])
         else:
             return None
 
@@ -103,15 +113,15 @@ class MediaCloudinaryStorage(Storage):
             return name[:max_length]
 
     def _normalize_path(self, path):
-        if path != '' and not path.endswith('/'):
-            path += '/'
+        if path != "" and not path.endswith("/"):
+            path += "/"
         return path
 
     def _get_prefix(self):
         return app_settings.PREFIX
 
     def _prepend_prefix(self, name):
-        prefix = self._get_prefix().lstrip('/')
+        prefix = self._get_prefix().lstrip("/")
         prefix = self._normalize_path(prefix)
         if not name.startswith(prefix):
             name = prefix + name
@@ -123,30 +133,30 @@ class MediaCloudinaryStorage(Storage):
         directories = set()
         files = []
         for resource in resources:
-            resource_tail = resource.replace(path, '', 1)
-            if '/' in resource_tail:
-                directory = resource_tail.split('/', 1)[0]
+            resource_tail = resource.replace(path, "", 1)
+            if "/" in resource_tail:
+                directory = resource_tail.split("/", 1)[0]
                 directories.add(directory)
             else:
                 files.append(resource_tail)
         return list(directories), files
 
     def _normalise_name(self, name):
-        return name.replace('\\', '/')
+        return name.replace("\\", "/")
 
 
 class RawMediaCloudinaryStorage(MediaCloudinaryStorage):
-    RESOURCE_TYPE = RESOURCE_TYPES['RAW']
+    RESOURCE_TYPE = RESOURCE_TYPES["RAW"]
 
 
 class VideoMediaCloudinaryStorage(MediaCloudinaryStorage):
-    RESOURCE_TYPE = RESOURCE_TYPES['VIDEO']
+    RESOURCE_TYPE = RESOURCE_TYPES["VIDEO"]
 
 
 storages_per_type = {
-    RESOURCE_TYPES['IMAGE']: MediaCloudinaryStorage(),
-    RESOURCE_TYPES['RAW']: RawMediaCloudinaryStorage(),
-    RESOURCE_TYPES['VIDEO']: VideoMediaCloudinaryStorage(),
+    RESOURCE_TYPES["IMAGE"]: MediaCloudinaryStorage(),
+    RESOURCE_TYPES["RAW"]: RawMediaCloudinaryStorage(),
+    RESOURCE_TYPES["VIDEO"]: VideoMediaCloudinaryStorage(),
 }
 
 
@@ -157,7 +167,8 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
     because static files are cached both by Cloudinary CDN and browsers
     and changing files could become problematic.
     """
-    RESOURCE_TYPE = RESOURCE_TYPES['RAW']
+
+    RESOURCE_TYPE = RESOURCE_TYPES["RAW"]
     TAG = app_settings.STATIC_TAG
 
     def _get_resource_type(self, name):
@@ -170,15 +181,15 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
         if extension is None:
             return self.RESOURCE_TYPE
         elif extension in app_settings.STATIC_IMAGES_EXTENSIONS:
-            return RESOURCE_TYPES['IMAGE']
+            return RESOURCE_TYPES["IMAGE"]
         elif extension in app_settings.STATIC_VIDEOS_EXTENSIONS:
-            return RESOURCE_TYPES['VIDEO']
+            return RESOURCE_TYPES["VIDEO"]
         else:
             return self.RESOURCE_TYPE
 
     @staticmethod
     def _get_file_extension(name):
-        substrings = name.split('.')
+        substrings = name.split(".")
         if len(substrings) == 1:  # no extensions
             return None
         else:
@@ -192,8 +203,13 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
     def _upload(self, name, content):
         resource_type = self._get_resource_type(name)
         name = self._remove_extension_for_non_raw_file(name)
-        return cloudinary.uploader.upload(content, public_id=name, resource_type=resource_type,
-                                          invalidate=True, tags=self.TAG)
+        return cloudinary.uploader.upload(
+            content,
+            public_id=name,
+            resource_type=resource_type,
+            invalidate=True,
+            tags=self.TAG,
+        )
 
     def _remove_extension_for_non_raw_file(self, name):
         """
@@ -207,7 +223,7 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
             return name
         else:
             extension = self._get_file_extension(name)
-            return name[:-len(extension) - 1]
+            return name[: -len(extension) - 1]
 
     # we only need 2 methods of HashedFilesMixin, so we just copy them as function objects to avoid MRO complexities
     file_hash = HashedFilesMixin.file_hash
@@ -222,7 +238,7 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
         response = requests.head(url)
         if response.status_code == 404:
             return False
-        etag = response.headers['ETAG'].split('"')[1]
+        etag = response.headers["ETAG"].split('"')[1]
         hash = self.file_hash(name, content)
         return etag.startswith(hash)
 
@@ -230,7 +246,9 @@ class StaticCloudinaryStorage(MediaCloudinaryStorage):
         """
         Saves only when a file with a name and a content is not already uploaded to Cloudinary.
         """
-        name = self.clean_name(name)  # to change to UNIX style path on windows if necessary
+        name = self.clean_name(
+            name
+        )  # to change to UNIX style path on windows if necessary
         if not self._exists_with_etag(name, content):
             content.seek(0)
             super(StaticCloudinaryStorage, self)._save(name, content)
@@ -264,9 +282,14 @@ class ManifestCloudinaryStorage(FileSystemStorage):
     then you are guaranteed the manifest will be used in all production environment,
     including Heroku and AWS Elastic Beanstalk.
     """
+
     def __init__(self, location=None, base_url=None, *args, **kwargs):
-        location = app_settings.STATICFILES_MANIFEST_ROOT if location is None else location
-        super(ManifestCloudinaryStorage, self).__init__(location, base_url, *args, **kwargs)
+        location = (
+            app_settings.STATICFILES_MANIFEST_ROOT if location is None else location
+        )
+        super(ManifestCloudinaryStorage, self).__init__(
+            location, base_url, *args, **kwargs
+        )
 
 
 class HashCloudinaryMixin(object):
@@ -281,13 +304,19 @@ class HashCloudinaryMixin(object):
         if content is None:
             absolute_path = finders.find(clean_name)
             try:
-                content = open(absolute_path, 'rb')
+                content = open(absolute_path, "rb")
             except (IOError, OSError) as e:
                 if e.errno == errno.ENOENT:
-                    raise ValueError("The file '%s' could not be found with %r." % (clean_name, self))
+                    raise ValueError(
+                        "The file '%s' could not be found with %r." % (clean_name, self)
+                    )
                 else:
                     raise
-            content = File(content)
+            except TypeError as e:
+                # Handling empty file at read
+                return ""
+            else:
+                content = File(content)
             opened = True
         try:
             file_hash = self.file_hash(clean_name, content)
@@ -303,43 +332,49 @@ class HashCloudinaryMixin(object):
         unparsed_name[2] = hashed_name
         # Special casing for a @font-face hack, like url(myfont.eot?#iefix")
         # http://www.fontspring.com/blog/the-new-bulletproof-font-face-syntax
-        if '?#' in name and not unparsed_name[3]:
-            unparsed_name[2] += '?'
+        if "?#" in name and not unparsed_name[3]:
+            unparsed_name[2] += "?"
         return urlunsplit(unparsed_name)
 
     def post_process(self, paths, dry_run=False, **options):
         original_exists = self.exists
-        self.exists = lambda name: False  # temporarily overwritten to prevent any exist check
-        for response in super(HashCloudinaryMixin, self).post_process(paths, dry_run, **options):
+        self.exists = (
+            lambda name: False
+        )  # temporarily overwritten to prevent any exist check
+        for response in super(HashCloudinaryMixin, self).post_process(
+            paths, dry_run, **options
+        ):
             yield response
         self.exists = original_exists
 
     def read_manifest(self):
         try:
             with self.manifest_storage.open(self.manifest_name) as manifest:
-                return manifest.read().decode('utf-8')
+                return manifest.read().decode("utf-8")
         except IOError:
             return None
 
     def add_unix_path_keys_to_paths(self, paths):
         for path in paths.copy():
-            if '\\' in path:
+            if "\\" in path:
                 clean_path = self.clean_name(path)
                 paths[clean_path] = paths[path]
 
     def save_manifest(self):
-        payload = {'paths': self.hashed_files, 'version': self.manifest_version}
-        if os.name == 'nt':
-            paths = payload['paths']
+        payload = {"paths": self.hashed_files, "version": self.manifest_version}
+        if os.name == "nt":
+            paths = payload["paths"]
             self.add_unix_path_keys_to_paths(paths)
         if self.manifest_storage.exists(self.manifest_name):
             self.manifest_storage.delete(self.manifest_name)
-        contents = json.dumps(payload).encode('utf-8')
+        contents = json.dumps(payload).encode("utf-8")
         self.manifest_storage._save(self.manifest_name, ContentFile(contents))
 
     # we only need 1 method of HashedFilesMixin, so we just copy it as function objects to avoid MRO complexities
     stored_name = HashedFilesMixin.stored_name
 
 
-class StaticHashedCloudinaryStorage(HashCloudinaryMixin, ManifestFilesMixin, StaticCloudinaryStorage):
+class StaticHashedCloudinaryStorage(
+    HashCloudinaryMixin, ManifestFilesMixin, StaticCloudinaryStorage
+):
     pass
