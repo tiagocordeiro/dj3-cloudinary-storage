@@ -24,6 +24,9 @@ DATABASES = {
     }
 }
 
+# Required by Django > 3.2
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

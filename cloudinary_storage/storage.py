@@ -312,7 +312,7 @@ class HashCloudinaryMixin(object):
                     )
                 else:
                     raise
-            except TypeError as e:
+            except TypeError:
                 # Handling empty file at read
                 return ""
             else:
