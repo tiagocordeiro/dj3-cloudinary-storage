@@ -1,4 +1,4 @@
-Django==3.2.8
+Django==4.0.1
 Pillow==8.4.0
 flake8==4.0.1
 coverage==6.0.2
