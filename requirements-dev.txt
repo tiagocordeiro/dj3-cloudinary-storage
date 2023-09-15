@@ -1,5 +1,5 @@
 Django==3.2.8
-Pillow==8.4.0
+Pillow==10.0.1
 flake8==4.0.1
 coverage==6.0.2
 
