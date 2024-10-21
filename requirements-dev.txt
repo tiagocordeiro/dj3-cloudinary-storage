@@ -1,6 +1,6 @@
 Django==3.2.8
 Pillow==8.4.0
 flake8==4.0.1
-coverage==6.0.2
+coverage==7.6.4
 
 -r requirements.txt
